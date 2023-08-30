@@ -106,6 +106,8 @@ if ($action == 'result') {
 	curl_close($ch);
 	$response = json_decode($result, true);
 
+	/*
+
 	if (@$response['error'] == 'ok' && $_POST['db_type'] == 'create-new-database') {
 		try {
 
@@ -247,6 +249,9 @@ if ($action == 'result') {
 		}
 	}
 
+
+	*/
+
 	if (@$response['error'] == 'ok') {
 		try {
 			$file = fopen($response['location'], 'w');
@@ -260,6 +265,7 @@ if ($action == 'result') {
 
 	if (@$response['error'] == 'ok') {
 		try {
+            $db = new PDO("mysql:host=$_POST[db_host];dbname={$_POST['db_name']}", $_POST['db_user'], $_POST['db_pass']);
 			$db->query("UPDATE admins SET email='" . $_POST['email'] . "', username='" . $_POST['admin_user'] . "', password='" . password_hash($_POST['admin_pass'], PASSWORD_DEFAULT) . "' WHERE username='admin'");
 		} catch (Exception $e) {
 			$response['message'] = 'EasyInstaller was unable to set the credentials of admin.';
