@@ -18,8 +18,8 @@ RUN apt-get update && apt-get install -y \
     rewrite
 
 # Add the user UID:1000, GID:1000, home at /app
-RUN groupadd -r app -g 1000 && useradd -u 1000 -r -g app -m -d /app -s /sbin/nologin -c "App user" app && \
-    chmod 755 /var/www/html
+#RUN groupadd -r app -g 1000 && useradd -u 1000 -r -g app -m -d /app -s /sbin/nologin -c "App user" app && \
+#    chmod 755 /var/www/html
 
 RUN php -r "readfile('http://getcomposer.org/installer');" | php -- --install-dir=/usr/bin/ --filename=composer
 
@@ -31,7 +31,7 @@ RUN echo "file_uploads = On\n" \
          "max_execution_time = 600\n" \
          > /usr/local/etc/php/conf.d/uploads.ini
 
-USER app
+#USER app
 
 WORKDIR /var/www/html/core
 
