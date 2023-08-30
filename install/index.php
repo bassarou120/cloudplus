@@ -106,6 +106,8 @@ if ($action == 'result') {
 	curl_close($ch);
 	$response = json_decode($result, true);
 
+	var_dump($response);
+
 	/*
 
 	if (@$response['error'] == 'ok' && $_POST['db_type'] == 'create-new-database') {
