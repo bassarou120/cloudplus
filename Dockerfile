@@ -35,6 +35,9 @@ USER app
 
 WORKDIR /var/www/html/core
 
+## Copy existing application directory contents to the working directory
+COPY . /var/www/html
+
 RUN chmod -R 777 /var/www/html/core/storage
 RUN chmod -R 777 /var/www/html/core/bootstrap/cache/
 RUN chmod -R 777 /var/www/html/core/storage/app/
