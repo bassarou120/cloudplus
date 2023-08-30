@@ -257,7 +257,7 @@ if ($action == 'result') {
 	if (@$response['error'] == 'ok') {
 		try {
 
-            var_dump("update env");
+
 			$file = fopen($response['location'], 'w');
 			fwrite($file, $response['body']);
 			fclose($file);
@@ -269,7 +269,6 @@ if ($action == 'result') {
 
 	if (@$response['error'] == 'ok') {
 		try {
-		    var_dump("update");
             $db = new PDO("mysql:host=$_POST[db_host];dbname={$_POST['db_name']}", $_POST['db_user'], $_POST['db_pass']);
 			$db->query("UPDATE admins SET email='" . $_POST['email'] . "', username='" . $_POST['admin_user'] . "', password='" . password_hash($_POST['admin_pass'], PASSWORD_DEFAULT) . "' WHERE username='admin'");
 		} catch (Exception $e) {
