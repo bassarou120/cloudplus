@@ -12,6 +12,8 @@ class BladeDirectivesServiceProvider extends ServiceProvider {
      * @return void
      */
     public function boot() {
+
+
         Blade::directive('permit', function ($code) {
             return '<?php $hasPermission = App\Models\Role::hasPermission(' . $code . ')  ? 1 : 0;
             if($hasPermission == 1): ?>';

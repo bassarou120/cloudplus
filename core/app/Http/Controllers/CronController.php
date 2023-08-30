@@ -15,17 +15,17 @@ use App\Models\CronJobLog;
 use Carbon\Carbon;
 
 class CronController extends Controller{
-    
-    protected $limit; 
+
+    protected $limit;
     protected $billingSetting;
     protected $selectInvoiceColumns;
 
     public function __construct(){
         $this->limit = 100;
         $this->billingSetting = BillingSetting::first();
-        $this->selectInvoiceColumns = 'id, reminder, user_id, amount, status, due_date, created, last_cron, hosting_id, domain_id'; 
+        $this->selectInvoiceColumns = 'id, reminder, user_id, amount, status, due_date, created, last_cron, hosting_id, domain_id';
     }
- 
+
     public function all(){
         setTimeLimit();
 
@@ -33,7 +33,7 @@ class CronController extends Controller{
         $general->last_cron = now();
         $general->save();
 
-        $this->invoiceGenerate(); 
+        $this->invoiceGenerate();
         $this->unpaidInvoiceReminder();
         $this->firstOverdueReminder();
         $this->secondOverdueReminder();
@@ -46,12 +46,14 @@ class CronController extends Controller{
     }
 
     public function cron(){
-    
+
         setTimeLimit();
 
         $general            = gs();
         $general->last_cron = now();
         $general->save();
+
+
 
         $crons = CronJob::with('schedule');
         if (request()->alias) {
@@ -103,7 +105,7 @@ class CronController extends Controller{
     }
 
     protected function invoiceGenerate(){
-        
+
         $billingSetting = $this->billingSetting;
 
         $enableForHosting = false;
@@ -124,8 +126,8 @@ class CronController extends Controller{
                 $enableForDomain = true;
             }
         }
- 
-        if($enableForHosting){ 
+
+        if($enableForHosting){
             //invoice 0 means empty invoice/allow creating a new invoice
             $hostings = Hosting::active()->where('invoice', 0)->where('billing_cycle', '!=', 0)
                                 ->where('next_invoice_date', '<=', Carbon::now())->orderBy('last_cron')->limit($this->limit)
@@ -145,9 +147,9 @@ class CronController extends Controller{
                                         });
                                     }
                                 ])
-                               ->get(['id', 'invoice', 'user_id', 'product_id', 'recurring_amount', 'billing_cycle', 'status', 
+                               ->get(['id', 'invoice', 'user_id', 'product_id', 'recurring_amount', 'billing_cycle', 'status',
                                 'next_invoice_date', 'next_due_date', 'last_cron','setup_fee']);
-        
+
             $this->generateHostingInvoice($hostings);
         }
 
@@ -155,36 +157,36 @@ class CronController extends Controller{
             //invoice 0 means empty invoice/allow creating a new invoice
             $domains = Domain::active()->where('invoice', 0)->where('next_invoice_date', '<=', Carbon::now())->orderBy('last_cron')->limit($this->limit)
                              ->get(['id', 'invoice', 'user_id', 'domain', 'id_protection', 'recurring_amount', 'next_due_date', 'reg_period', 'last_cron', 'reg_period']);
-         
+
             $this->generateDomainInvoice($domains);
-        } 
+        }
 
     }
 
     protected function generateHostingInvoice($hostings){
-        
-        foreach($hostings as $hosting){ 
+
+        foreach($hostings as $hosting){
             $billingCycle = billingCycle($hosting->billing_cycle, true);
-         
+
             $invoice = new Invoice();
             $invoice->hosting_id = $hosting->id;
             $invoice->user_id = $hosting->user_id;
 
             $invoice->reminder = $invoice->updateReminder();
             /**
-            * updateReminder is an array for managing the invoice reminding notify process 
-            * @see \App\Models\Invoice go to updateReminder method 
+            * updateReminder is an array for managing the invoice reminding notify process
+            * @see \App\Models\Invoice go to updateReminder method
             */
             $invoice->amount = $hosting->recurring_amount;
             $invoice->due_date = $hosting->next_due_date;
             $invoice->status = 2; //2 means Unpaid
             /**
-            * For knowing about the status 
-            * @see \App\Models\Invoice go to status method 
+            * For knowing about the status
+            * @see \App\Models\Invoice go to status method
             */
             $invoice->created = now();
             $invoice->next_due_date = @$this->hostingNextDueDate($billingCycle['billing_cycle'], $hosting);
-            $invoice->save(); 
+            $invoice->save();
 
             $hosting->invoice = 1; //0 means empty invoice/allow creating a new invoice
 
@@ -193,21 +195,21 @@ class CronController extends Controller{
 
             $this->invoiceItemForHosting($hosting, $invoice);
             $this->tax($invoice);
-        } 
+        }
     }
 
     protected function invoiceItemForHosting($hosting, $invoice){
         $product = $hosting->product;
-        $domainText = $hosting->domain ? ' - ' .$hosting->domain : null; 
+        $domainText = $hosting->domain ? ' - ' .$hosting->domain : null;
 
         $date = ' ('.showDateTime($hosting->next_due_date, 'd/m/Y').' - '.showDateTime($invoice->next_due_date, 'd/m/Y') .')';
         $text = $product->name . $domainText. $date ."\n".$product->serviceCategory->name;
-  
+
         foreach($hosting->hostingConfigs as $config){
             $text = $text ."\n". $config->select->name.': '.$config->option->name;
         }
 
-        $item = new InvoiceItem(); 
+        $item = new InvoiceItem();
         $item->invoice_id = $invoice->id;
         $item->user_id = $invoice->user_id;
         $item->hosting_id = $hosting->id;
@@ -218,7 +220,7 @@ class CronController extends Controller{
     }
 
     protected function generateDomainInvoice($domains){
-       
+
         foreach($domains as $domain){
             $invoice = new Invoice();
             $invoice->domain_id = $domain->id;
@@ -226,19 +228,19 @@ class CronController extends Controller{
 
             $invoice->reminder = $invoice->updateReminder();
             /**
-            * updateReminder is an array for managing the invoice reminding notify process 
-            * @see \App\Models\Invoice go to updateReminder method 
+            * updateReminder is an array for managing the invoice reminding notify process
+            * @see \App\Models\Invoice go to updateReminder method
             */
             $invoice->amount = $domain->recurring_amount;
             $invoice->due_date = $domain->next_due_date;
             $invoice->status = 2; //2 means Unpaid
             /**
-            * For knowing about the status 
-            * @see \App\Models\Invoice go to status method 
+            * For knowing about the status
+            * @see \App\Models\Invoice go to status method
             */
             $invoice->created = now();
             $invoice->next_due_date = $this->domainNextDueDate($domain);
-            $invoice->save(); 
+            $invoice->save();
 
             $domain->invoice = 1; //0 means empty invoice/allow creating a new invoice
 
@@ -247,7 +249,7 @@ class CronController extends Controller{
 
             $this->invoiceItemForDomain($invoice, $domain);
             $this->tax($invoice);
-        }  
+        }
     }
 
     protected function invoiceItemForDomain($invoice, $domain){
@@ -262,39 +264,39 @@ class CronController extends Controller{
         $item->item_type = 1; //1 means Domain
         $item->description = $text;
         $item->amount = $domain->recurring_amount;
-        $item->reg_period = $domain->reg_period; 
+        $item->reg_period = $domain->reg_period;
         $item->trx_type = '+';
-        $item->next_due_date = $invoice->next_due_date; 
+        $item->next_due_date = $invoice->next_due_date;
         $item->save();
     }
 
     protected function unpaidInvoiceReminder(){
-        
+
         $billingSetting = $this->billingSetting;
 
-        if($billingSetting->invoice_send_reminder != 1 || $billingSetting->invoice_send_reminder_days == 0){ 
+        if($billingSetting->invoice_send_reminder != 1 || $billingSetting->invoice_send_reminder_days == 0){
             return false;
         }
 
         $days = $billingSetting->invoice_send_reminder_days;
         $invoices = $this->invoices('unpaid_reminder', $days, '-');
-    
+
         foreach($invoices as $invoice){
             SendServiceEmail::invoicePaymentReminder($invoice);
-        
+
             $invoice->reminder = $invoice->updateReminder('unpaid_reminder');
             /**
-            * updateReminder is an array for managing the invoice reminding notify process 
-            * @see \App\Models\Invoice go to updateReminder method 
+            * updateReminder is an array for managing the invoice reminding notify process
+            * @see \App\Models\Invoice go to updateReminder method
             */
             $invoice->last_cron = Carbon::now();
             $invoice->save();
-        }   
+        }
 
     }
-    
+
     protected function firstOverdueReminder(){
-      
+
         $billingSetting = $this->billingSetting;
 
         if($billingSetting->invoice_send_reminder != 1 || $billingSetting->invoice_first_over_due_reminder == 0){
@@ -303,23 +305,23 @@ class CronController extends Controller{
 
         $days = $billingSetting->invoice_first_over_due_reminder;
         $invoices = $this->invoices('first_over_due_reminder', $days, '+');
-        
+
         foreach($invoices as $invoice){
             SendServiceEmail::firstInvoiceOverdue($invoice);
 
             $invoice->reminder = $invoice->updateReminder('first_over_due_reminder');
             /**
-            * updateReminder is an array for managing the invoice reminding notify process 
-            * @see \App\Models\Invoice go to updateReminder method 
+            * updateReminder is an array for managing the invoice reminding notify process
+            * @see \App\Models\Invoice go to updateReminder method
             */
             $invoice->last_cron = Carbon::now();
             $invoice->save();
-        } 
+        }
 
     }
 
-    protected function secondOverdueReminder(){           
-        
+    protected function secondOverdueReminder(){
+
         $billingSetting = $this->billingSetting;
 
         if($billingSetting->invoice_send_reminder != 1 || $billingSetting->invoice_second_over_due_reminder == 0){
@@ -328,23 +330,23 @@ class CronController extends Controller{
 
         $days = $billingSetting->invoice_second_over_due_reminder;
         $invoices = $this->invoices('second_over_due_reminder', $days, '+');
-        
+
         foreach($invoices as $invoice){
             SendServiceEmail::secondInvoiceOverdue($invoice);
 
             $invoice->reminder = $invoice->updateReminder('second_over_due_reminder');
             /**
-            * updateReminder is an array for managing the invoice reminding notify process 
-            * @see \App\Models\Invoice go to updateReminder method 
+            * updateReminder is an array for managing the invoice reminding notify process
+            * @see \App\Models\Invoice go to updateReminder method
             */
             $invoice->last_cron = Carbon::now();
             $invoice->save();
-        } 
+        }
 
     }
 
-    protected function thirdOverdueReminder(){             
-        
+    protected function thirdOverdueReminder(){
+
         $billingSetting = $this->billingSetting;
 
         if($billingSetting->invoice_send_reminder != 1 || $billingSetting->invoice_third_over_due_reminder == 0){
@@ -359,17 +361,17 @@ class CronController extends Controller{
 
             $invoice->reminder = $invoice->updateReminder('third_over_due_reminder');
             /**
-            * updateReminder is an array for managing the invoice reminding notify process 
-            * @see \App\Models\Invoice go to updateReminder method 
+            * updateReminder is an array for managing the invoice reminding notify process
+            * @see \App\Models\Invoice go to updateReminder method
             */
             $invoice->last_cron = Carbon::now();
             $invoice->save();
-        } 
+        }
 
     }
 
-    protected function addLateFee(){       
-        
+    protected function addLateFee(){
+
         $billingSetting = $this->billingSetting;
 
         if($billingSetting->late_fee_days == 0){ //If disable late fee from admin panel
@@ -378,8 +380,8 @@ class CronController extends Controller{
 
         $days = $billingSetting->late_fee_days;
         $invoices = $this->invoices('add_late_fee', $days, '+');
-       
-        foreach($invoices as $invoice){ 
+
+        foreach($invoices as $invoice){
             $item = new InvoiceItem();
             $item->invoice_id = $invoice->id;
             $item->user_id = $invoice->user_id;
@@ -389,24 +391,24 @@ class CronController extends Controller{
 
             $invoice->reminder = $invoice->updateReminder('add_late_fee');
             /**
-            * updateReminder is an array for managing the invoice reminding notify process 
-            * @see \App\Models\Invoice go to updateReminder method 
+            * updateReminder is an array for managing the invoice reminding notify process
+            * @see \App\Models\Invoice go to updateReminder method
             */
-            $invoice->amount = $billingSetting->getLateFee($invoice->amount, true); 
+            $invoice->amount = $billingSetting->getLateFee($invoice->amount, true);
             /**
             * getLateFee is a method for getting the amount of the late fee
-            * @see \App\Models\BillingSetting go to getLateFee method 
+            * @see \App\Models\BillingSetting go to getLateFee method
             */
             $invoice->last_cron = Carbon::now();
             $invoice->save();
-        }  
+        }
     }
 
     protected function invoices($column, $days, $addOrLess){
-      
+
         $append = 'Append_'.str_replace(' ', '_', ucwords(str_replace('_', ' ', $column))).'_Date';
         $select = $this->selectInvoiceColumns;
-      
+
         $invoices = Invoice::unpaid()
                     ->whereJsonContains("reminder->$column", 0)
                     ->selectRaw("$select, DATE_FORMAT(due_date $addOrLess interval $days day, '%Y-%m-%d') AS $append")
@@ -417,7 +419,7 @@ class CronController extends Controller{
                         $user->select('id', 'firstname', 'lastname', 'username', 'email', 'mobile', 'country_code');
                     })
                     ->get();
-      
+
         return $invoices;
     }
 
@@ -425,21 +427,21 @@ class CronController extends Controller{
         try{
             $optionA = ['monthly'=>1, 'quarterly'=>3, 'semi_annually'=>6];
             $optionB = ['annually'=>1, 'biennially'=>2, 'triennially'=>3];
-            
+
             $keysForA = array_keys($optionA);
             $keysForB = array_keys($optionB);
-            
+
             if(in_array($billingCycle, $keysForA)){
                 return Carbon::parse($hosting->next_due_date)->addMonth($optionA[$billingCycle]);
             }
-    
+
             if(in_array($billingCycle, $keysForB)){
                 return Carbon::parse($hosting->next_due_date)->addYear($optionB[$billingCycle]);
             }
         }catch(\Exception $error){
             return $error->getMessage();
         }
-        
+
     }
 
     protected function domainNextDueDate($domain){
@@ -450,7 +452,7 @@ class CronController extends Controller{
 
         $general = gs();
         $tax = $general->tax;
-        
+
         //Insert new row for tax
         if($tax > 0){
             $item = new InvoiceItem();
@@ -464,7 +466,7 @@ class CronController extends Controller{
 
             $invoice->amount += $item->amount;
             $invoice->save();
-        } 
+        }
     }
 
     private function removeShoppingCarts(){
@@ -477,4 +479,3 @@ class CronController extends Controller{
 
 
 
- 

@@ -146,6 +146,8 @@ function getTemplates() {
     $param['website'] = @$_SERVER['HTTP_HOST'] . @$_SERVER['REQUEST_URI'] . ' - ' . env("APP_URL");
     $url = 'https://license.viserlab.com/updates/templates/' . systemDetails()['name'];
     $response = CurlRequest::curlPostContent($url, $param);
+
+
     if ($response) {
         return $response;
     } else {

@@ -17,6 +17,8 @@ class Controller extends BaseController
 
     public function __construct()
     {
+
+
         $this->activeTemplate = activeTemplate();
 
         $className = get_called_class();
@@ -24,7 +26,9 @@ class Controller extends BaseController
 
         $this->middleware(function ($request, $next) {
             $user = auth()->user();
-            if ($user && session()->has('randomId')) {  
+
+
+            if ($user && session()->has('randomId')) {
                 ShoppingCart::where('user_id', session()->get('randomId'))->update(['user_id' => $user->id]);
                 session()->forget('randomId');
             }

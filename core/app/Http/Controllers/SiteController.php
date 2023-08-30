@@ -23,6 +23,7 @@ class SiteController extends Controller {
 
     public function index() {
 
+
         $reference = @$_GET['reference'];
         if ($reference) {
             session()->put('reference', $reference);
@@ -33,6 +34,7 @@ class SiteController extends Controller {
     }
 
     public function pages($slug) {
+
         $page = Page::where('tempname', $this->activeTemplate)->where('slug', $slug)->firstOrFail();
         $pageTitle = $page->name;
         $sections = $page->secs;
@@ -47,7 +49,7 @@ class SiteController extends Controller {
     }
 
     public function contactSubmit(Request $request) {
-        
+
         $this->validate($request, [
             'name' => 'required',
             'email' => 'required',
@@ -211,7 +213,7 @@ class SiteController extends Controller {
         }
 
         return view($this->activeTemplate . 'product_configure', compact('product', 'pageTitle', 'domains'));
-    } 
+    }
 
     public function registerDomain(Request $request) {
 
@@ -219,9 +221,9 @@ class SiteController extends Controller {
 
         $pageTitle = 'Register New Domain';
         $domain = strtolower($request->domain);
-        $result = [];   
+        $result = [];
 
-        if ($domain) { 
+        if ($domain) {
             $request->validate([
                 'domain'=> ['regex:/^[a-zA-Z0-9.-]+$/']
             ]);
@@ -258,7 +260,7 @@ class SiteController extends Controller {
     }
 
     public function searchDomain(Request $request) {
-    
+
         setTimeLimit();
 
         $validator = Validator::make($request->all(), [
@@ -292,7 +294,7 @@ class SiteController extends Controller {
         if (@$execute['data']['status'] == 'ERROR') {
             return ['success' => false, 'message' => $execute['data']['message']];
         }
-  
+
         return ['success' =>true, 'result'=>$execute];
     }
 

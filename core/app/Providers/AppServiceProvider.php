@@ -34,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
 
+
         if (!cache()->get('SystemInstalled')) {
             $envFilePath = base_path('.env');
             $envContents = file_get_contents($envFilePath);
@@ -45,13 +46,21 @@ class AppServiceProvider extends ServiceProvider
             }
         }
 
+
+
         $general = gs();
         $activeTemplate = activeTemplate();
         $viewShare['general'] = $general;
         $viewShare['activeTemplate'] = $activeTemplate;
         $viewShare['activeTemplateTrue'] = activeTemplate(true);
         $viewShare['emptyMessage'] = 'Data not found';
+
+
         view()->share($viewShare);
+
+
+
+
 
         view()->composer('admin.partials.sidenav', function ($view) {
             $view->with([
@@ -69,6 +78,8 @@ class AppServiceProvider extends ServiceProvider
                 'countAutomationError'    => AdminNotification::where('api_response', 1)->where('is_read', 0)->count(),
             ]);
         });
+
+
 
         view()->composer([$activeTemplate.'partials.header', $activeTemplate.'layouts.side_bar', $activeTemplate.'layouts.master_side_bar'], function ($view) {
             $view->with([
