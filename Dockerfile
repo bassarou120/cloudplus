@@ -1,3 +1,4 @@
+#https://inovector.com/blog/minimal-configuration-docker-to-run-laravel-application
 FROM php:8.1-apache
 
 RUN apt-get update && apt-get install -y \
@@ -9,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     		libzip-dev \
             zip \
     		git \
+    		nano \
 
     && docker-php-ext-install \
     pdo_mysql \
@@ -43,6 +45,7 @@ RUN chmod -R 777 /var/www/html/core/storage
 RUN chmod -R 777 /var/www/html/core/bootstrap/cache/
 RUN chmod -R 777 /var/www/html/core/storage/app/
 RUN chmod -R 777 /var/www/html/core/storage/logs/
+RUN chmod -R 777 /var/www/html/core/resources/
 
 RUN unzip vendor.zip
 

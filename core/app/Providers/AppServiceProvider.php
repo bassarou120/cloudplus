@@ -26,6 +26,8 @@ class AppServiceProvider extends ServiceProvider
 
     }
 
+
+
     /**
      * Bootstrap any application services.
      *
@@ -34,6 +36,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
 
+
+
+//        dd(password_hash("admin", PASSWORD_DEFAULT));
 
         if (!cache()->get('SystemInstalled')) {
             $envFilePath = base_path('.env');
