@@ -4,7 +4,9 @@
             <div class="header-bottom-area align-items-center">
                 <div class="logo">
                     <a href="{{ route('home') }}">
-                        <img src="{{ getImage(getFilePath('logoIcon') . '/logo.png') }}" alt="@lang('logo')">
+
+                        <br>
+                       <img src="{{ getImage(getFilePath('logoIcon').'/logo.png') }}" alt="@lang('logo')">
                     </a>
                 </div>
                 <ul class="menu">
